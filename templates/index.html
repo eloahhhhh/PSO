@@ -4,12 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PSO Visualizer mit Manim</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
@@ -29,12 +23,12 @@
 
           <label>
             Partikelanzahl
-            <input type="number" name="particles" min="5" max="80" value="30" />
+            <input type="number" name="particles" min="5" max="120" value="45" />
           </label>
 
           <label>
             Iterationen
-            <input type="number" name="iterations" min="5" max="120" value="60" />
+            <input type="number" name="iterations" min="5" max="300" value="90" />
           </label>
 
           <label>
@@ -63,7 +57,8 @@
 
       <section class="viewer">
         <div id="statusBox">Bereit. Wähle Parameter und starte das Rendering.</div>
-        <canvas id="liveCanvas"></canvas>
+        <video id="resultVideo" controls playsinline></video>
+        <a id="downloadBtn" class="download-btn disabled" href="#" download>MP4 herunterladen</a>
       </section>
     </main>
 
