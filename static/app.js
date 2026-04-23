@@ -16,6 +16,18 @@ function toPayload(formData) {
   };
 }
 
+async function parseResponseData(response) {
+  const raw = await response.text();
+  if (!raw) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { raw };
+  }
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -34,9 +46,17 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const data = await parseResponseData(response);
     if (!response.ok) {
-      throw new Error(data?.detail?.message || "Unbekannter Fehler beim Rendering.");
+      const serverMessage =
+        data?.detail?.message ||
+        data?.message ||
+        data?.raw ||
+        `Serverfehler (${response.status}) beim Rendering.`;
+      throw new Error(serverMessage);
+    }
+    if (!data?.video_url) {
+      throw new Error("Server hat keine gueltige Video-URL geliefert.");
     }
 
     const timestampedVideoUrl = `${data.video_url}?t=${Date.now()}`;
