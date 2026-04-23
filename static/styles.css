@@ -93,7 +93,15 @@ button:disabled {
   background: #000;
   border: 1px solid #252a35;
   border-radius: 10px;
-  min-height: 480px;
+  min-height: 360px;
+}
+
+#liveCanvas {
+  width: 100%;
+  max-width: 1100px;
+  background: #000;
+  border: 1px solid #252a35;
+  border-radius: 10px;
 }
 
 .download-btn {

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PSO Visualizer mit Manim</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel">
+        <h1>PSO Visualizer</h1>
+        <p class="subtitle">Klassischer Particle Swarm Optimization Algorithmus mit Manim-Rendering.</p>
+
+        <form id="renderForm">
+          <label>
+            Optimierungsfunktion
+            <select name="function_name">
+              <option value="ackley">Ackley</option>
+              <option value="rosenbrock">Rosenbrock</option>
+            </select>
+          </label>
+
+          <label>
+            Partikelanzahl
+            <input type="number" name="particles" min="5" max="80" value="30" />
+          </label>
+
+          <label>
+            Iterationen
+            <input type="number" name="iterations" min="5" max="120" value="60" />
+          </label>
+
+          <label>
+            Trägheitsgewicht w
+            <input type="number" step="0.01" name="inertia_weight" min="0" max="1.4" value="0.72" />
+          </label>
+
+          <label>
+            Kognitiver Faktor c1
+            <input type="number" step="0.01" name="cognitive_factor" min="0" max="4" value="1.49" />
+          </label>
+
+          <label>
+            Sozialer Faktor c2
+            <input type="number" step="0.01" name="social_factor" min="0" max="4" value="1.49" />
+          </label>
+
+          <label>
+            Zufalls-Seed
+            <input type="number" name="seed" min="0" max="999999" value="7" />
+          </label>
+
+          <button id="submitBtn" type="submit">Animation rendern</button>
+        </form>
+      </section>
+
+      <section class="viewer">
+        <div id="statusBox">Bereit. Wähle Parameter und starte das Rendering.</div>
+        <video id="resultVideo" controls playsinline></video>
+        <a id="downloadBtn" class="download-btn disabled" href="#" download>Video herunterladen (WebM)</a>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
