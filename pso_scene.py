@@ -115,15 +115,15 @@ def run_pso(config: dict) -> tuple[np.ndarray, FunctionSpec, np.ndarray]:
 def build_heatmap(function_name: str, spec: FunctionSpec, output_path: Path) -> None:
     f, _ = get_function(function_name)
 
-    x = np.linspace(spec.x_min, spec.x_max, 700)
-    y = np.linspace(spec.y_min, spec.y_max, 700)
+    x = np.linspace(spec.x_min, spec.x_max, 420)
+    y = np.linspace(spec.y_min, spec.y_max, 420)
     xx, yy = np.meshgrid(x, y)
     zz = f(xx, yy)
     zz = np.log1p(zz - zz.min())
 
-    fig, ax = plt.subplots(figsize=(8.5, 8.5), dpi=260)
-    ax.contourf(xx, yy, zz, levels=85, cmap="inferno")
-    ax.contour(xx, yy, zz, levels=40, linewidths=0.45, colors="white", alpha=0.4)
+    fig, ax = plt.subplots(figsize=(6.2, 6.2), dpi=170)
+    ax.contourf(xx, yy, zz, levels=55, cmap="inferno")
+    ax.contour(xx, yy, zz, levels=24, linewidths=0.35, colors="white", alpha=0.35)
     ax.set_axis_off()
     fig.tight_layout(pad=0)
     fig.savefig(output_path, bbox_inches="tight", pad_inches=0)

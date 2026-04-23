@@ -30,8 +30,8 @@ app.mount("/renders", StaticFiles(directory=str(RENDER_DIR)), name="renders")
 
 class RenderRequest(BaseModel):
     function_name: str = Field(pattern="^(ackley|rosenbrock)$")
-    particles: int = Field(ge=5, le=120)
-    iterations: int = Field(ge=5, le=300)
+    particles: int = Field(ge=5, le=80)
+    iterations: int = Field(ge=5, le=120)
     inertia_weight: float = Field(ge=0.0, le=1.4)
     cognitive_factor: float = Field(ge=0.0, le=4.0)
     social_factor: float = Field(ge=0.0, le=4.0)
@@ -56,7 +56,7 @@ def render_animation(payload: RenderRequest):
         sys.executable,
         "-m",
         "manim",
-        "-qh",
+        "-ql",
         str(SCENE_FILE),
         "PSOScene",
         "--disable_caching",
