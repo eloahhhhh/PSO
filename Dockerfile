@@ -5,8 +5,12 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Runtime dependencies for Manim rendering
+# Build + runtime dependencies for Manim rendering
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libcairo2-dev \
+    libpango1.0-dev \
     ffmpeg \
     libcairo2 \
     libpango-1.0-0 \
