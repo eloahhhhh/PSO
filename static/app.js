@@ -1,16 +1,31 @@
 const form = document.getElementById("renderForm");
 const statusBox = document.getElementById("statusBox");
 const submitBtn = document.getElementById("submitBtn");
-const resultVideo = document.getElementById("resultVideo");
-const downloadBtn = document.getElementById("downloadBtn");
-
-const viewer = document.querySelector(".viewer");
-const liveCanvas = document.createElement("canvas");
-liveCanvas.id = "liveCanvas";
-liveCanvas.width = 1100;
-liveCanvas.height = 620;
-viewer.insertBefore(liveCanvas, resultVideo);
+const liveCanvas = document.getElementById("liveCanvas");
 const ctx = liveCanvas.getContext("2d");
+let canvasCssWidth = 1200;
+let canvasCssHeight = 760;
+
+let backgroundCache = null;
+let activeRunId = 0;
+
+function setCanvasResolution() {
+  const dpr = window.devicePixelRatio || 1;
+  const measuredWidth = Math.max(480, Math.round(liveCanvas.clientWidth || 1200));
+  canvasCssWidth = measuredWidth;
+  canvasCssHeight = Math.round(measuredWidth * (760 / 1200));
+  liveCanvas.style.height = `${canvasCssHeight}px`;
+  liveCanvas.width = Math.round(canvasCssWidth * dpr);
+  liveCanvas.height = Math.round(canvasCssHeight * dpr);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+
+setCanvasResolution();
+window.addEventListener("resize", () => {
+  setCanvasResolution();
+  backgroundCache = null;
+});
 
 function createRng(seed) {
   let value = seed >>> 0;
@@ -52,32 +67,86 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function normalizeValue(functionName, z) {
+  if (functionName === "rosenbrock") {
+    const logScaled = Math.log10(z + 1);
+    return clamp(1 - logScaled / 3.2, 0, 1);
+  }
+  return clamp(1 - z / 22, 0, 1);
+}
+
 function mapToCanvas(x, y, domain) {
   const nx = (x - domain.minX) / (domain.maxX - domain.minX);
   const ny = (y - domain.minY) / (domain.maxY - domain.minY);
   return {
-    px: nx * liveCanvas.width,
-    py: liveCanvas.height - ny * liveCanvas.height,
+    px: nx * canvasCssWidth,
+    py: canvasCssHeight - ny * canvasCssHeight,
   };
 }
 
-function drawBackground(domain, fnName) {
-  const cols = 110;
-  const rows = 62;
-  const cellW = liveCanvas.width / cols;
-  const cellH = liveCanvas.height / rows;
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      const x = domain.minX + ((col + 0.5) / cols) * (domain.maxX - domain.minX);
-      const y = domain.minY + ((row + 0.5) / rows) * (domain.maxY - domain.minY);
-      const z = objective(fnName, x, y);
-      const normalized = clamp(1 - z / 20, 0, 1);
-      const hue = 200 - normalized * 180;
-      const light = 12 + normalized * 55;
-      ctx.fillStyle = `hsl(${hue} 80% ${light}%)`;
-      ctx.fillRect(col * cellW, liveCanvas.height - (row + 1) * cellH, cellW + 1, cellH + 1);
+function paletteInferno(t) {
+  const stops = [
+    [0.0, [16, 12, 48]],
+    [0.2, [66, 10, 104]],
+    [0.4, [127, 34, 142]],
+    [0.6, [187, 55, 84]],
+    [0.8, [238, 122, 26]],
+    [1.0, [252, 238, 89]],
+  ];
+  for (let i = 0; i < stops.length - 1; i += 1) {
+    const [t0, c0] = stops[i];
+    const [t1, c1] = stops[i + 1];
+    if (t >= t0 && t <= t1) {
+      const k = (t - t0) / (t1 - t0);
+      return [
+        Math.round(c0[0] + (c1[0] - c0[0]) * k),
+        Math.round(c0[1] + (c1[1] - c0[1]) * k),
+        Math.round(c0[2] + (c1[2] - c0[2]) * k),
+      ];
     }
   }
+  return [252, 238, 89];
+}
+
+function drawBackground(domain, fnName) {
+  const cacheKey = `${fnName}:${domain.minX}:${domain.maxX}:${domain.minY}:${domain.maxY}:${liveCanvas.width}:${liveCanvas.height}`;
+  if (backgroundCache?.key === cacheKey) {
+    ctx.putImageData(backgroundCache.imageData, 0, 0);
+    return;
+  }
+
+  const width = liveCanvas.width;
+  const height = liveCanvas.height;
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
+  const contourLevels = 28;
+
+  for (let py = 0; py < height; py += 1) {
+    for (let px = 0; px < width; px += 1) {
+      const x = domain.minX + (px / (width - 1)) * (domain.maxX - domain.minX);
+      const y = domain.maxY - (py / (height - 1)) * (domain.maxY - domain.minY);
+      const z = objective(fnName, x, y);
+      const t = normalizeValue(fnName, z);
+      let [r, g, b] = paletteInferno(t);
+
+      const contourDistance = Math.abs(t * contourLevels - Math.round(t * contourLevels));
+      if (contourDistance < 0.035) {
+        const mix = clamp((0.035 - contourDistance) / 0.035, 0, 1) * 0.25;
+        r = Math.round(r + (255 - r) * mix);
+        g = Math.round(g + (255 - g) * mix);
+        b = Math.round(b + (255 - b) * mix);
+      }
+
+      const idx = (py * width + px) * 4;
+      data[idx] = r;
+      data[idx + 1] = g;
+      data[idx + 2] = b;
+      data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  backgroundCache = { key: cacheKey, imageData };
 }
 
 function createParticles(payload, domain, rng) {
@@ -112,30 +181,22 @@ function drawFrame(payload, domain, particles, globalBest, iteration) {
   for (const particle of particles) {
     const { px, py } = mapToCanvas(particle.x, particle.y, domain);
     ctx.beginPath();
-    ctx.arc(px, py, 5, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffe082";
+    ctx.arc(px, py, 5.6, 0, Math.PI * 2);
+    ctx.fillStyle = "#8fe7ff";
     ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(12,22,29,0.72)";
     ctx.stroke();
   }
 
   const g = mapToCanvas(globalBest.x, globalBest.y, domain);
   ctx.beginPath();
-  ctx.arc(g.px, g.py, 8, 0, Math.PI * 2);
-  ctx.fillStyle = "#00ffb8";
+  ctx.arc(g.px, g.py, 8.5, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff7c6b";
   ctx.fill();
-  ctx.strokeStyle = "#023b2b";
+  ctx.strokeStyle = "#501711";
   ctx.lineWidth = 2;
   ctx.stroke();
-
-  ctx.fillStyle = "rgba(0,0,0,0.55)";
-  ctx.fillRect(12, 12, 370, 78);
-  ctx.fillStyle = "#dce8ff";
-  ctx.font = "16px Segoe UI";
-  ctx.fillText(`Iteration: ${iteration + 1} / ${payload.iterations}`, 20, 40);
-  ctx.fillText(`Bestwert: ${globalBest.value.toFixed(6)}`, 20, 64);
-  ctx.fillText(`Funktion: ${payload.function_name}`, 20, 88);
 }
 
 function stepParticles(payload, domain, particles, globalBest, rng) {
@@ -174,52 +235,28 @@ function sleep(ms) {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const runId = ++activeRunId;
   const payload = toPayload(new FormData(form));
+  setCanvasResolution();
   const domain = domainFor(payload.function_name);
   const rng = createRng(payload.seed);
   const { particles, globalBest } = createParticles(payload, domain, rng);
+  backgroundCache = null;
 
   statusBox.textContent = "Rendering läuft lokal im Browser...";
   submitBtn.disabled = true;
-  downloadBtn.classList.add("disabled");
-  downloadBtn.removeAttribute("href");
-  resultVideo.removeAttribute("src");
-  resultVideo.load();
 
   try {
-    if (!window.MediaRecorder) {
-      throw new Error("Dein Browser unterstützt MediaRecorder nicht.");
-    }
-    const stream = liveCanvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
-    const chunks = [];
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
-    recorder.start();
-
     for (let i = 0; i < payload.iterations; i += 1) {
+      if (runId !== activeRunId) {
+        return;
+      }
       stepParticles(payload, domain, particles, globalBest, rng);
       drawFrame(payload, domain, particles, globalBest, i);
       statusBox.textContent = `Rendering läuft lokal... Iteration ${i + 1}/${payload.iterations}`;
-      await sleep(45);
+      await sleep(33);
     }
-
-    await new Promise((resolve) => {
-      recorder.onstop = resolve;
-      recorder.stop();
-    });
-
-    const videoBlob = new Blob(chunks, { type: "video/webm" });
-    const videoUrl = URL.createObjectURL(videoBlob);
-    resultVideo.src = videoUrl;
-    resultVideo.load();
-    downloadBtn.href = videoUrl;
-    downloadBtn.download = `pso-${payload.function_name}.webm`;
-    downloadBtn.classList.remove("disabled");
-    statusBox.textContent = "Fertig. Video wurde lokal erzeugt und kann heruntergeladen werden.";
+    statusBox.textContent = "Fertig. Die Animation ist abgeschlossen.";
   } catch (error) {
     statusBox.textContent = `Fehler: ${error.message}`;
   } finally {

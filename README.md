@@ -3,7 +3,7 @@
 Diese Version laeuft komplett ohne Backend auf Netlify:
 
 - PSO-Simulation und Rendering laufen direkt im Browser (Canvas).
-- Video wird lokal als `webm` erzeugt und kann heruntergeladen werden.
+- Die Animation wird live im Browser abgespielt.
 - Keine Server-API, kein Python, kein FFmpeg auf dem Host notwendig.
 
 Unterstuetzte Testfunktionen:
@@ -59,10 +59,10 @@ Dann `http://127.0.0.1:8000` oeffnen.
 1. Netlify-URL oeffnen.
 2. Parameter einstellen und **Animation rendern** klicken.
 3. Warten bis das Rendering fertig ist.
-4. Mit **Video herunterladen (WebM)** die Animation speichern.
+4. Die Animation direkt im Browser verfolgen.
 
 ## Hinweise
 
 - Das Rendering passiert lokal im Browser. Schwache Geraete brauchen laenger.
 - Sehr hohe Iterationszahlen koennen den Browser kurzzeitig stark auslasten.
-- Die Download-Datei ist `webm`. Wenn du zwingend `mp4` brauchst, musst du lokal konvertieren.
+- Es gibt keinen Video-Export mehr. Fokus ist eine flüssige, hochwertige Live-Visualisierung.
